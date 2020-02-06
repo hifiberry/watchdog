@@ -25,6 +25,7 @@ import requests
 import logging
 
 from watchers.watcher import Watcher
+from pip._vendor.html5lib._trie import Trie
 
 class Internet(Watcher):
 
@@ -33,6 +34,7 @@ class Internet(Watcher):
         super().__init__()
         self.name = "internet"
         self.ok = True
+        self.stopped = False
         try:
             self.test_interval = int(params["test_interval"])
         except:
@@ -53,13 +55,15 @@ class Internet(Watcher):
         
         self.fails = 0
 
+    def stop(self):
+        self.stopped = True
     
     def is_ok(self):
         return self.ok
         
     def run(self):
         
-        while (True):
+        while not(self.stopped):
             ok = False
             for s in self.test_servers:
                 url = "https://{}/".format(s)
