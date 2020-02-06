@@ -25,7 +25,6 @@ import requests
 import logging
 
 from watchers.watcher import Watcher
-from pip._vendor.html5lib._trie import Trie
 
 class Internet(Watcher):
 
