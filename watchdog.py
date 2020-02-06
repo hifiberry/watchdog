@@ -52,7 +52,7 @@ class Watchdog():
             failed = self.has_failed()
             if len(failed) == 0:
                 logging.debug("ok, updating watchdog")
-                f = open("/etc/watchdog", "w")
+                f = open("/dev/watchdog", "w")
                 f.write("watchdog ok")
                 f.close()
             else:
