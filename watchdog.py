@@ -24,16 +24,23 @@ import logging
 import sys
 import time
 import configparser
+import signal
+
+watchdog = None
 
 class Watchdog():
     
     def __init__(self):
         self.watchers = []
-        pass
+        self.running = False
     
     
     def add_watcher(self, watcher):
-        self.watchers.append(watcher) 
+        self.watchers.append(watcher)
+        
+    def stop(self):
+        self.running=False
+        
         
     def has_failed(self):
         '''
@@ -48,16 +55,24 @@ class Watchdog():
         return failed
     
     def run(self):
-        while True:
-            failed = self.has_failed()
-            if len(failed) == 0:
-                logging.debug("ok, updating watchdog")
-                f = open("/dev/watchdog", "w")
-                f.write("watchdog ok")
-                f.close()
-            else:
-                logging.debug("failed watchers: %s", failed)
-            time.sleep(7)
+        watchdogfile = open("/dev/watchdog", "w")
+        self.running = True
+        try:
+            while self.running:
+                failed = self.has_failed()
+                if len(failed) == 0:
+                    logging.debug("ok, updating watchdog")
+                    watchdogfile.write("watchdog ok")
+                    watchdogfile.flush()
+                else:
+                    logging.debug("failed watchers: %s", failed)
+                time.sleep(7)
+        except Exception as e:
+            logging.info("exception %s, aborting",e)
+            
+        logging.info("closing watchdog device")
+        watchdogfile.write("V")
+        watchdogfile.close()
             
             
 def create_watcher(classname, params = {}):
@@ -89,6 +104,10 @@ def read_config(watchdog):
             except Exception as e:
                 logging.error("Exception during rotary control initialization")
                 logging.exception(e)
+                
+def sigterm_handler(_signo, _stack_frame):
+    watchdog.stop()
+    sys.exit(0)
 
 
 if __name__ == '__main__':
